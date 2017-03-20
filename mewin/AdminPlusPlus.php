@@ -11,13 +11,13 @@ use ManiaControl\Players\PlayerManager;
 
 class AdminPlugPlus implements Plugin, CommandListener, CallbackListener
 {
-	const ID = 85;
-	const VERSION = "1.0";
-	const TABLE_APP_NICKS = "mc_adm_nicks";
-	const SETTINGS_PERMISSION_INFO = "View extended player information";
-	
-	private $maniaControl, $mysqli;
-    
+    const ID = 85;
+    const VERSION = "1.0";
+    const TABLE_APP_NICKS = "mc_adm_nicks";
+    const SETTINGS_PERMISSION_INFO = "View extended player information";
+
+    private $maniaControl, $mysqli;
+
     public function load(ManiaControl $maniaControl)
     {
         $this->maniaControl = $maniaControl;
@@ -26,27 +26,27 @@ class AdminPlugPlus implements Plugin, CommandListener, CallbackListener
         $this->initTables();
         $this->registerListeners();
     }
-    
+
     private function registerListeners()
     {
         $this->maniaControl->callbackManager->registerCallbackListener(PlayerManager::CB_PLAYERCONNECT, $this, "handlePlayerJoin");
         $this->maniaControl->commandManager->registerCommandListener('pinfo', $this, 'command_playerinfo', true, 'Information about a player');
         $this->maniaControl->commandManager->registerCommandListener('nicks', $this, 'command_nicks', true, 'View a players known nicknames');
     }
-    
+
     private function initSettings()
     {
         $this->maniaControl->authenticationManager->definePermissionLevel(self::SETTINGS_PERMISSION_INFO, AuthenticationManager::AUTH_LEVEL_MODERATOR);
     }
-	
-	private function initTables()
+
+    private function initTables()
     {
         $sql = "CREATE TABLE IF NOT EXISTS `" . self::TABLE_APP_NICKS . "` (
-                `index` int(11) UNSIGNED NOT NULL AUTO_INCREMENT, 
+                `index` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
                 `playerIndex` int(11) NOT NULL,
                 `nick` VARCHAR(150) NOT NULL,
                 PRIMARY KEY (`index`),
-				UNIQUE(`playerIndex`, `nick`)
+                UNIQUE(`playerIndex`, `nick`)
                 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci COMMENT='Chat Log' AUTO_INCREMENT=1;";
         $st = $this->mysqli->prepare($sql);
         if ($this->mysqli->error)
@@ -61,7 +61,7 @@ class AdminPlugPlus implements Plugin, CommandListener, CallbackListener
             return false;
         }
         $st->close();
-        
+
         return true;
     }
 
@@ -72,7 +72,7 @@ class AdminPlugPlus implements Plugin, CommandListener, CallbackListener
 
     public static function prepare(ManiaControl $maniaControl)
     {
-        
+
     }
 
     public static function getAuthor()
@@ -99,17 +99,17 @@ class AdminPlugPlus implements Plugin, CommandListener, CallbackListener
     {
         return self::VERSION;
     }
-	
-	private function addNick($player)
-	{
-		$playerIndex = $player->index;
-		$nick = $player->nickname;
-		$sql = "INSERT INTO `" . self::TABLE_APP_NICKS . "`(
-				`playerIndex`, `nick`
-				) VALUES (
-				?, ?
-				)
-				ON DUPLICATE KEY UPDATE `playerIndex` = `playerIndex`;";
+
+    private function addNick($player)
+    {
+        $playerIndex = $player->index;
+        $nick = $player->nickname;
+        $sql = "INSERT INTO `" . self::TABLE_APP_NICKS . "`(
+                `playerIndex`, `nick`
+                ) VALUES (
+                ?, ?
+                )
+                ON DUPLICATE KEY UPDATE `playerIndex` = `playerIndex`;";
         $st = $this->mysqli->prepare($sql);
         if ($this->mysqli->error)
         {
@@ -124,57 +124,57 @@ class AdminPlugPlus implements Plugin, CommandListener, CallbackListener
             return false;
         }
         $st->close();
-		return true;
-	}
-    
+        return true;
+    }
+
     public function handlePlayerJoin(Player $player)
     {
-		return $this->addNick($player);
+        return $this->addNick($player);
     }
-	
-	private function getNicks(Player $player)
-	{
-		$playerIndex = $player->index;
-		$sql = "SELECT `nick` 
-				FROM `" . self::TABLE_APP_NICKS . "`
-				WHERE `playerIndex` = ?
-				ORDER BY `index`";
-		$st = $this->mysqli->prepare($sql);
-		if ($this->mysqli->error)
-		{
+
+    private function getNicks(Player $player)
+    {
+        $playerIndex = $player->index;
+        $sql = "SELECT `nick`
+                FROM `" . self::TABLE_APP_NICKS . "`
+                WHERE `playerIndex` = ?
+                ORDER BY `index`";
+        $st = $this->mysqli->prepare($sql);
+        if ($this->mysqli->error)
+        {
             trigger_error($this->mysqli->error);
             return false;
-		}
-		$st->bind_param('i', $playerIndex);
-		$st->execute();
-		if ($st->error)
-		{
-			$st->close();
-			trigger_error($st->error);
-			return false;
-		}
-		
-		$nicks = array();
-		$nick = "";
-		
-		$st->bind_result($nick);
-		while ($st->fetch())
-		{
-			$nicks[] = $nick;
-		}
-		
-		$st->free_result();
-		$st->close();
-		
-		if (empty($nicks))
-		{ // didnt add a nick yet? do it now!
-			$this->addNick($player);
-			$nicks[] = $player->nickname;
-		}
-		
-		return $nicks;
-	}
-    
+        }
+        $st->bind_param('i', $playerIndex);
+        $st->execute();
+        if ($st->error)
+        {
+            $st->close();
+            trigger_error($st->error);
+            return false;
+        }
+
+        $nicks = array();
+        $nick = "";
+
+        $st->bind_result($nick);
+        while ($st->fetch())
+        {
+            $nicks[] = $nick;
+        }
+
+        $st->free_result();
+        $st->close();
+
+        if (empty($nicks))
+        { // didnt add a nick yet? do it now!
+            $this->addNick($player);
+            $nicks[] = $player->nickname;
+        }
+
+        return $nicks;
+    }
+
     public function command_playerinfo(array $chatCallback, Player $player)
     {
         if (!$this->maniaControl->authenticationManager->checkPermission($player, self::SETTINGS_PERMISSION_INFO))
@@ -182,7 +182,7 @@ class AdminPlugPlus implements Plugin, CommandListener, CallbackListener
             $this->maniaControl->authenticationManager->sendNotAllowed($player);
             return;
         }
-        
+
         $cmd = explode(' ', $chatCallback[1][2]);
         if (empty($cmd[1]))
         {
@@ -196,11 +196,11 @@ class AdminPlugPlus implements Plugin, CommandListener, CallbackListener
                 $this->maniaControl->chat->sendError("Player '{$cmd[1]}' not found!", $player->login);
                 return;
             }
-			
-			// todo
+
+            // todo
         }
     }
-    
+
     public function command_nicks(array $chatCallback, Player $player)
     {
         if (!$this->maniaControl->authenticationManager->checkPermission($player, self::SETTINGS_PERMISSION_INFO))
@@ -208,7 +208,7 @@ class AdminPlugPlus implements Plugin, CommandListener, CallbackListener
             $this->maniaControl->authenticationManager->sendNotAllowed($player);
             return;
         }
-        
+
         $cmd = explode(' ', $chatCallback[1][2]);
         if (empty($cmd[1]))
         {
@@ -222,10 +222,10 @@ class AdminPlugPlus implements Plugin, CommandListener, CallbackListener
                 $this->maniaControl->chat->sendError("Player '{$cmd[1]}' not found!", $player->login);
                 return;
             }
-			
-			$nicks = $this->getNicks($target);
-			$text = implode('$z, ', $nicks);
-			$this->maniaControl->chat->sendInformation("Known nicks of \"{$cmd[1]}\": {$text}", $player->login);
+
+            $nicks = $this->getNicks($target);
+            $text = implode('$z, ', $nicks);
+            $this->maniaControl->chat->sendInformation("Known nicks of \"{$cmd[1]}\": {$text}", $player->login);
         }
     }
 }
